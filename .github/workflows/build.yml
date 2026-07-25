@@ -1,0 +1,64 @@
+name: Build VoxBrasil
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - '*'
+      - '*/*'
+      - '**'
+
+jobs:
+  build-windows-release:
+    runs-on: windows-2022
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          clean: true
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Install CMake
+        uses: lukka/get-cmake@latest
+        with:
+          cmakeVersion: 3.23.2
+
+      - name: Generate build files
+        run: |
+          mkdir build
+          cd build
+          cmake -DCMAKE_BUILD_TYPE=Release .. -A Win32
+          cmake --build . --config Release
+
+      - name: Upload VoxBrasil (Windows)
+        uses: actions/upload-artifact@v4
+        with:
+          name: VoxBrasil-win-release.zip
+          path: build/server/Release/sampvoice.dll
+
+  build-linux-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          clean: true
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Build
+        run: |
+          cd docker
+          chmod +x ./build.sh
+          chmod +x ./docker-entrypoint.sh
+          ./build.sh
+
+      - name: Upload VoxBrasil (Linux)
+        uses: actions/upload-artifact@v4
+        with:
+          name: VoxBrasil-linux-release.zip
+          path: docker/build/server/sampvoice.so
